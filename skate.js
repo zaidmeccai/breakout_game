@@ -742,12 +742,36 @@ class PlayScene extends Phaser.Scene {
         this.input.keyboard.on('keyup-S', () => { this.downHeld = false; });
         this.input.keyboard.on('keydown-R', () => { if (this.state === 'over') this.scene.restart(); });
         this.input.keyboard.on('keydown-ESC', () => this.scene.start('TitleScene'));
-        this.input.on('pointerdown', (p) => {
-            if (this.state === 'over') return;
-            if (p.y > GAME_HEIGHT * 0.66) { this.downHeld = true; }
-            else this.onJump();
-        });
-        this.input.on('pointerup', () => { this.downHeld = false; });
+
+        // --- touch / pointer ---
+        // Tap anywhere = jump (tap again mid-air = double-jump). On touch devices,
+        // dedicated DUCK + FART buttons sit in the bottom corners. topOnly input
+        // means tapping a button does NOT also trigger the full-screen jump zone.
+        this.input.addPointer(2);   // allow holding DUCK while tapping jump
+        this.add.zone(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT)
+            .setInteractive().setDepth(8)
+            .on('pointerdown', () => this.onJump());
+
+        const isTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+        if (isTouch) {
+            this.makeTouchButton(92, GAME_HEIGHT - 58, 132, 84, 'DUCK', 0x4dd0e1,
+                () => { this.downHeld = true; }, () => { this.downHeld = false; });
+            this.makeTouchButton(GAME_WIDTH - 100, GAME_HEIGHT - 58, 162, 84, 'FART', 0x8bd450,
+                () => this.tryFart(), null);
+        }
+    }
+
+    makeTouchButton(x, y, w, h, label, color, onDown, onUp) {
+        const g = this.add.graphics().setDepth(42);
+        g.fillStyle(color, 0.3); g.fillRoundedRect(x - w / 2, y - h / 2, w, h, 16);
+        g.lineStyle(2.5, color, 0.85); g.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 16);
+        this.add.text(x, y, label, {
+            fontFamily: 'system-ui, sans-serif', fontSize: '20px', color: '#ffffff', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(42).setAlpha(0.92);
+        const zone = this.add.zone(x, y, w, h).setInteractive({ useHandCursor: true }).setDepth(43);
+        zone.on('pointerdown', () => { if (this.state !== 'over') onDown(); });
+        if (onUp) { zone.on('pointerup', onUp); zone.on('pointerout', onUp); }
+        return zone;
     }
 
     onJump() {
