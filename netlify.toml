@@ -2,9 +2,12 @@
 [build]
   publish = "."
 
-# Serve the skate game at the site root, so the link you share just works.
-# (The Breakout game stays available at /index.html and /game.js.)
+# Serve the skate game at the site root so the link you share just works.
+# `force = true` is REQUIRED: without it Netlify serves the existing index.html
+# (Breakout) at "/" and skips this rewrite. force makes the rewrite win.
+# The Breakout game stays available at /index.html and /game.js.
 [[redirects]]
   from = "/"
   to = "/skate.html"
   status = 200
+  force = true
