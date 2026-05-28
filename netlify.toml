@@ -1,0 +1,10 @@
+# Netlify config for GamesTry (pure static site — no build step).
+[build]
+  publish = "."
+
+# Serve the skate game at the site root, so the link you share just works.
+# (The Breakout game stays available at /index.html and /game.js.)
+[[redirects]]
+  from = "/"
+  to = "/skate.html"
+  status = 200
