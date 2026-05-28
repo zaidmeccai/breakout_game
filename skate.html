@@ -11,17 +11,25 @@
             /* Soft gradient backdrop so the letterbox around the game feels
                intentional instead of a harsh black void. */
             background: radial-gradient(ellipse at center, #1c2a44 0%, #0a0f1f 100%);
-            height: 100%;
+            /* Triple-layer height: legacy vh fallback, modern svh, and a
+               JS-set --app-vh for older iOS that doesn't understand svh.
+               iOS Safari's 100vh includes the area behind the URL bar, which
+               otherwise hides the bottom of the game (on-screen buttons). */
+            height: 100vh;
+            height: 100svh;
+            height: var(--app-vh, 100vh);
             overflow: hidden;
             overscroll-behavior: none;
             font-family: system-ui, -apple-system, sans-serif;
             color: #ffffff;
         }
-        /* #game is the Phaser parent — fill the viewport so Phaser's FIT
-           scaler has the whole screen to scale the 4:3 game canvas into. */
+        /* #game is the Phaser parent — fill the *visible* viewport so Phaser's
+           FIT scaler has the actual screen to scale the 4:3 game canvas into. */
         #game {
             width: 100vw;
             height: 100vh;
+            height: 100svh;
+            height: var(--app-vh, 100vh);
         }
         #game canvas {
             display: block;
@@ -75,6 +83,17 @@
     </style>
 </head>
 <body>
+    <script>
+        // Keep --app-vh in sync with the real visible viewport height.
+        // Works around iOS Safari's 100vh including the area behind the URL
+        // bar, which would otherwise push the bottom of the game off-screen.
+        (function () {
+            const set = () => document.documentElement.style.setProperty('--app-vh', window.innerHeight + 'px');
+            set();
+            window.addEventListener('resize', set);
+            window.addEventListener('orientationchange', set);
+        })();
+    </script>
     <div id="game"></div>
     <div id="rotate-hint">
         <div class="phone"></div>
