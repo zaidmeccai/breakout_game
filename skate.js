@@ -1317,10 +1317,17 @@ class PlayScene extends Phaser.Scene {
 // ============================================================================
 const config = {
     type: Phaser.AUTO,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
     parent: 'game',
     backgroundColor: '#4aa6ec',
+    // Scale the 800x600 game canvas to fit whatever screen it's on while
+    // preserving its 4:3 aspect ratio, centered. The page's gradient backdrop
+    // fills any letterbox area so it doesn't read as "broken empty space".
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: GAME_WIDTH,
+        height: GAME_HEIGHT,
+    },
     scene: [TitleScene, PlayScene],
 };
 
