@@ -754,21 +754,61 @@ class PlayScene extends Phaser.Scene {
 
         const isTouch = this.sys.game.device.input.touch || navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
         if (isTouch) {
-            this.makeTouchButton(92, GAME_HEIGHT - 58, 132, 84, 'DUCK', 0x4dd0e1,
+            const y = GAME_HEIGHT - 58;
+            // Movement buttons on the left, special action on the right.
+            this.makeCircleButton(58,  y, 42, 'DUCK', 0x4dd0e1, 'down',
                 () => { this.downHeld = true; }, () => { this.downHeld = false; });
-            this.makeTouchButton(GAME_WIDTH - 100, GAME_HEIGHT - 58, 162, 84, 'FART', 0x8bd450,
+            this.makeCircleButton(154, y, 42, 'JUMP', 0xffd34d, 'up',
+                () => this.onJump(), null);
+            this.makeCircleButton(GAME_WIDTH - 70, y, 48, 'Fart Boost', 0x8bd450, 'wind',
                 () => this.tryFart(), null);
         }
     }
 
-    makeTouchButton(x, y, w, h, label, color, onDown, onUp) {
+    // Circular on-screen touch button: soft drop shadow + tinted fill + color
+    // stroke + top-left highlight + icon glyph + label. Hit area is a true circle.
+    makeCircleButton(x, y, r, label, color, icon, onDown, onUp) {
+        // drop shadow
+        const sh = this.add.graphics().setDepth(41);
+        sh.fillStyle(0x000000, 0.3); sh.fillCircle(x + 2, y + 5, r);
+
+        // main button
         const g = this.add.graphics().setDepth(42);
-        g.fillStyle(color, 0.3); g.fillRoundedRect(x - w / 2, y - h / 2, w, h, 16);
-        g.lineStyle(2.5, color, 0.85); g.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 16);
-        this.add.text(x, y, label, {
-            fontFamily: 'system-ui, sans-serif', fontSize: '20px', color: '#ffffff', fontStyle: 'bold',
-        }).setOrigin(0.5).setDepth(42).setAlpha(0.92);
-        const zone = this.add.zone(x, y, w, h).setInteractive({ useHandCursor: true }).setDepth(43);
+        g.fillStyle(color, 0.32); g.fillCircle(x, y, r);
+        g.lineStyle(3, color, 0.95); g.strokeCircle(x, y, r);
+        // top-left highlight (pseudo-3D)
+        g.fillStyle(0xffffff, 0.22);
+        g.fillEllipse(x - r * 0.32, y - r * 0.4, r * 0.95, r * 0.55);
+
+        // icon (upper half of the circle)
+        g.fillStyle(0xffffff, 0.95);
+        if (icon === 'up') {
+            g.fillTriangle(x, y - r * 0.5, x - r * 0.32, y - r * 0.08, x + r * 0.32, y - r * 0.08);
+        } else if (icon === 'down') {
+            g.fillTriangle(x - r * 0.32, y - r * 0.5, x + r * 0.32, y - r * 0.5, x, y - r * 0.08);
+        } else if (icon === 'wind') {
+            g.lineStyle(3, 0xffffff, 0.95);
+            for (let i = 0; i < 3; i++) {
+                const yo = y - r * 0.36 + i * (r * 0.2);
+                const len = r * 0.7 - i * (r * 0.05);
+                g.beginPath();
+                g.moveTo(x - len / 2 - r * 0.04, yo);
+                g.lineTo(x + len / 2 - r * 0.04, yo);
+                g.strokePath();
+            }
+        }
+
+        // label (lower half)
+        this.add.text(x, y + r * 0.5, label, {
+            fontFamily: 'system-ui, sans-serif',
+            fontSize: label.length > 6 ? '11px' : '13px',
+            color: '#ffffff', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(42);
+
+        // circular hit area
+        const zone = this.add.zone(x, y, r * 2, r * 2)
+            .setInteractive(new Phaser.Geom.Circle(r, r, r), Phaser.Geom.Circle.Contains)
+            .setDepth(43);
         zone.on('pointerdown', () => { if (this.state !== 'over') onDown(); });
         if (onUp) { zone.on('pointerup', onUp); zone.on('pointerout', onUp); }
         return zone;
